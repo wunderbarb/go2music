@@ -2,9 +2,12 @@ module github.com/wunderbarb/go2music
 
 go 1.22.1
 
+replace (
+ 	github.com/wunderbarb/test => ../test
+)
+
 require (
 	github.com/alexballas/go2tv v1.16.1
-	github.com/davecgh/go-spew v1.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/wunderbarb/test v0.6.4
 )

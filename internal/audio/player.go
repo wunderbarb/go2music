@@ -1,20 +1,30 @@
-// v0.1.0
+// v0.2.0
+// Author: DIEHL E.
 
 package audio
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"github.com/alexballas/go2tv/devices"
+	"github.com/alexballas/go2tv/httphandlers"
+	"github.com/alexballas/go2tv/soapcalls"
 )
 
-var ErrNoDeviceAvailable = errors.New("no device available")
+var (
+	ErrNoDeviceAvailable = errors.New("no device available")
+	ErrNoDevicePlaying   = errors.New("no device playing")
+)
 
 type Player struct {
 	devices        map[string]string
 	selectedDevice string
+	server         *httphandlers.HTTPserver
+	tvData         *soapcalls.TVPayload
 }
 
-// Devices list
+// Devices lists the UPNP renderer currently available.
 func (p *Player) Devices() ([]string, error) {
 	err := p.available()
 	if err != nil {
@@ -30,6 +40,36 @@ func (p *Player) Devices() ([]string, error) {
 	return s, nil
 }
 
+// PlayTrack plays the track `tr` on the selected device.  `src` handles the feedback and stopping the service.
+func (p *Player) PlayTrack(tr Track, scr httphandlers.Screen) error {
+	tvData, err := soapcalls.NewTVPayload(&soapcalls.Options{
+		DMR:       p.devices[p.selectedDevice],
+		Media:     tr.filePath,
+		Subs:      "",
+		Mtype:     tr.mediaType,
+		Transcode: false,
+		Seek:      false,
+		LogOutput: nil,
+	})
+	if err != nil {
+		return err
+	}
+	p.tvData = tvData
+	p.server = httphandlers.NewServer(p.tvData.ListenAddress())
+	serverStarted := make(chan error)
+	// We pass the tvData here as we need the callback handlers to be able to react
+	// to the different media renderer states.
+	go func() {
+		p.server.StartServer(serverStarted, tr.filePath, "", p.tvData, scr)
+	}()
+	// Wait for HTTP server to properly initialize
+	if err := <-serverStarted; err != nil {
+		return err
+	}
+	return p.tvData.SendtoTV("Play1")
+}
+
+// SelectDevice defines the renderer device to be used amongst the available devices.
 func (p *Player) SelectDevice(d string) error {
 	_, ok := p.devices[d]
 	if !ok {
@@ -39,6 +79,15 @@ func (p *Player) SelectDevice(d string) error {
 	return nil
 }
 
+func (p *Player) Stop() error {
+	if p.tvData == nil {
+		return ErrNoDevicePlaying
+	}
+	return p.tvData.SendtoTV("Stop")
+}
+
+// ------------------------------------------
+
 func (p *Player) available() error {
 	deviceList, err := devices.LoadSSDPservices(1)
 	if err != nil {
@@ -46,4 +95,24 @@ func (p *Player) available() error {
 	}
 	p.devices = deviceList
 	return nil
+}
+
+func (p *Player) tearDown() {
+	_ = p.Stop()
+	p.tvData = nil
+	if p.server != nil {
+		p.server.StopServer()
+	}
+}
+
+type dummyScreen struct {
+	ctxCancel context.CancelFunc
+}
+
+func (d *dummyScreen) EmitMsg(msg string) {
+	fmt.Println(msg)
+}
+
+func (d *dummyScreen) Fini() {
+	d.ctxCancel()
 }

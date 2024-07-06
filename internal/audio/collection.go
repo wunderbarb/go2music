@@ -17,15 +17,24 @@ func NewCollection() *Collection {
 	return &Collection{}
 }
 
+func (c Collection) Len() int {
+	return len(c.tracks)
+}
+
+// Populate scans `path` and adds all the audio tracks to the collection.
 func (c *Collection) Populate(path string) error {
-	return filepath.WalkDir(path, func(path string, d os.DirEntry, err error) error {
+	return filepath.WalkDir(path, func(path1 string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if !isAudioFile(path) {
+		if !isAudioFile(path1) {
 			return nil
 		}
-		c.addTrack(Track{filePath: path})
+		tr, err := NewTrack(path1)
+		if err != nil {
+			return nil
+		}
+		c.addTrack(*tr)
 		return nil
 	})
 }

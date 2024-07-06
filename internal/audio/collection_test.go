@@ -1,4 +1,5 @@
-// v0.1.0
+// v0.2.0
+// Author: DIEHL E.
 
 package audio
 
@@ -24,4 +25,13 @@ func Test_isAudioFile(t *testing.T) {
 	for _, tt := range tests {
 		assert.Equal(isAudioFile(tt.path), tt.expResult)
 	}
+}
+
+func TestCollection_Populate(t *testing.T) {
+	require, assert := test.Describe(t)
+
+	c := NewCollection()
+	require.NoError(c.Populate("testdata"))
+	assert.Equal(2, c.Len())
+
 }
