@@ -1,5 +1,6 @@
-// v0.2.0
+// v0.2.1
 // Author: DIEHL E.
+// (C), Jul 2024
 
 package audio
 
@@ -10,6 +11,8 @@ import (
 	"github.com/alexballas/go2tv/devices"
 	"github.com/alexballas/go2tv/httphandlers"
 	"github.com/alexballas/go2tv/soapcalls"
+	"github.com/alexballas/go2tv/soapcalls/utils"
+	"net/url"
 )
 
 var (
@@ -34,7 +37,7 @@ func (p *Player) Devices() ([]string, error) {
 		return nil, ErrNoDeviceAvailable
 	}
 	s := make([]string, 0, len(p.devices))
-	for k, _ := range p.devices {
+	for k := range p.devices {
 		s = append(s, k)
 	}
 	return s, nil
@@ -80,6 +83,28 @@ func (p *Player) Play() error {
 	if p.tvData == nil {
 		return ErrNoDevicePlaying
 	}
+	return p.tvData.SendtoTV("Play1")
+}
+
+// Next plays the next track `tr`
+func (p *Player) Next(tr Track) error {
+	if p.tvData == nil {
+		return ErrNoDevicePlaying
+	}
+	oldHandler, err := url.Parse(p.tvData.MediaURL)
+	if err != nil { // SHOULD NEVER HAPPEN
+		return err
+	}
+	listenAddress := p.tvData.ListenAddress()
+	p.tvData.MediaURL = fmt.Sprintf("http://%s/%s", listenAddress, utils.ConvertFilename(tr.FilePath))
+	p.tvData.MediaPath = tr.FilePath
+	p.tvData.MediaType = tr.MediaType
+	newHandler, err := url.Parse(p.tvData.MediaURL)
+	if err != nil { // SHOULD NEVER HAPPEN
+		return err
+	}
+	p.server.AddHandler(newHandler.Path, p.tvData, tr.FilePath)
+	p.server.RemoveHandler(oldHandler.Path)
 	return p.tvData.SendtoTV("Play1")
 }
 
