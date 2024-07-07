@@ -3,14 +3,12 @@
 package cmd
 
 import (
-	"context"
+	"atomicgo.dev/keyboard"
+	"atomicgo.dev/keyboard/keys"
 	"github.com/pterm/pterm"
+	"github.com/spf13/cobra"
 	"github.com/wunderbarb/go2music/internal/audio"
 	"os"
-	"os/signal"
-	"syscall"
-
-	"github.com/spf13/cobra"
 )
 
 // rndCmd represents the rnd command
@@ -39,16 +37,36 @@ to quickly create a Cobra application.`,
 			pterm.Error.Println(err)
 			os.Exit(7)
 		}
-		exitCTX, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-		defer cancel()
-		scr := audio.NewDummyScreen(cancel)
+
+		scr := audio.NewDummyScreen(nil)
 		tr := c.Random()
 		if err := pl.PlayTrack(tr, scr); err != nil {
 			pterm.Error.Println(err)
 			os.Exit(8)
 		}
 		pterm.Info.Println(tr.FilePath)
-		<-exitCTX.Done()
+		keyboard.Listen(func(key keys.Key) (stop bool, err error) {
+			switch key.Code {
+			case keys.CtrlC:
+				return true, nil // Return true to stop listener
+			case keys.Space:
+				pl.Pause()
+				return false, nil
+			case keys.RuneKey: // Check if key is a rune key (a, b, c, 1, 2, 3, ...)
+				switch key.String() {
+				case "q":
+					return true, nil
+				case "s":
+					pl.Stop()
+					return false, nil
+				case "p":
+					pl.Play()
+					return false, nil
+				}
+			}
+
+			return false, nil // Return false to continue listening
+		})
 		pl.TearDown()
 	},
 }

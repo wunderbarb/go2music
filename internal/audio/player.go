@@ -69,6 +69,20 @@ func (p *Player) PlayTrack(tr Track, scr httphandlers.Screen) error {
 	return p.tvData.SendtoTV("Play1")
 }
 
+func (p *Player) Pause() error {
+	if p.tvData == nil {
+		return ErrNoDevicePlaying
+	}
+	return p.tvData.SendtoTV("Pause")
+}
+
+func (p *Player) Play() error {
+	if p.tvData == nil {
+		return ErrNoDevicePlaying
+	}
+	return p.tvData.SendtoTV("Play1")
+}
+
 // SelectDevice defines the renderer device to be used amongst the available devices.
 func (p *Player) SelectDevice(d string) error {
 	_, ok := p.devices[d]
