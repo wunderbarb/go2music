@@ -1,4 +1,5 @@
-// v0.1.0
+// v0.1.1
+// Author: DIEHL E.
 
 package cmd
 
@@ -14,13 +15,8 @@ import (
 // rndCmd represents the rnd command
 var rndCmd = &cobra.Command{
 	Use:   "rnd",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "plays randomly tracks from the collection.",
+	Long:  `plays randomly tracks from the collection.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var c audio.Collection
 		rd, err := os.Open(_cDefaultDB)
@@ -45,22 +41,27 @@ to quickly create a Cobra application.`,
 			os.Exit(8)
 		}
 		pterm.Info.Println(tr.FilePath)
-		keyboard.Listen(func(key keys.Key) (stop bool, err error) {
+		_ = keyboard.Listen(func(key keys.Key) (stop bool, err error) {
 			switch key.Code {
 			case keys.CtrlC:
 				return true, nil // Return true to stop listener
 			case keys.Space:
-				pl.Pause()
+				_ = pl.Pause()
 				return false, nil
 			case keys.RuneKey: // Check if key is a rune key (a, b, c, 1, 2, 3, ...)
 				switch key.String() {
 				case "q":
 					return true, nil
 				case "s":
-					pl.Stop()
+					_ = pl.Stop()
 					return false, nil
 				case "p":
-					pl.Play()
+					_ = pl.Play()
+					return false, nil
+				case "n":
+					tr := c.Random()
+					_ = pl.Next(tr)
+					pterm.Info.Println(tr.FilePath)
 					return false, nil
 				}
 			}
