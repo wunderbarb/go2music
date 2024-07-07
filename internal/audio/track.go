@@ -1,3 +1,5 @@
+// v0.1.0
+
 package audio
 
 import (
@@ -5,9 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/alexballas/go2tv/soapcalls/utils"
+	"github.com/pkg/errors"
 )
 
 // ErrNotAudioFile is returned when the file is not an audio file.
@@ -15,8 +16,8 @@ var ErrNotAudioFile = errors.New("not an audio file")
 
 // Track holds the metadata for a music track.
 type Track struct {
-	filePath  string
-	mediaType string
+	FilePath  string `json:"file_path"`
+	MediaType string `json:"media_type"`
 }
 
 // NewTrack creates a new Track.  It certifies that the file is an audio file.
@@ -40,5 +41,5 @@ func NewTrack(filePath string) (*Track, error) {
 	if !strings.HasPrefix(mediaType, "audio/") {
 		return nil, ErrNotAudioFile
 	}
-	return &Track{filePath: absMediaFile, mediaType: mediaType}, nil
+	return &Track{FilePath: absMediaFile, MediaType: mediaType}, nil
 }

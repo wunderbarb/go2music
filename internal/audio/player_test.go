@@ -47,7 +47,7 @@ func TestPlayer_PlayTrack(t *testing.T) {
 	defer test.NoLeakButPersistentHTTP(t)
 
 	pt := getTestPlayer()
-	src := &dummyScreen{}
+	src := &DummyScreen{}
 	track, _ := NewTrack(_goodTrack)
 	defer pt.tearDown()
 

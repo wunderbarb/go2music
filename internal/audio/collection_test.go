@@ -1,5 +1,6 @@
-// v0.2.0
+// v0.3.0
 // Author: DIEHL E.
+// (C), Jul 2024
 
 package audio
 
@@ -34,4 +35,20 @@ func TestCollection_Populate(t *testing.T) {
 	require.NoError(c.Populate("testdata"))
 	assert.Equal(2, c.Len())
 
+}
+
+func TestCollection_Load(t *testing.T) {
+	require, assert := test.Describe(t)
+
+	c := NewCollection()
+	_ = c.Populate("testdata")
+	wr := test.NewInRAMWriter()
+
+	require.NoError(c.Store(wr))
+	require.NoError(wr.Close())
+
+	c1 := NewCollection()
+	rd := test.NewInRAMReader(wr.Bytes())
+	require.NoError(c1.Load(rd))
+	assert.Equal(c1.Len(), c.Len())
 }

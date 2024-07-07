@@ -44,9 +44,9 @@ func (p *Player) Devices() ([]string, error) {
 func (p *Player) PlayTrack(tr Track, scr httphandlers.Screen) error {
 	tvData, err := soapcalls.NewTVPayload(&soapcalls.Options{
 		DMR:       p.devices[p.selectedDevice],
-		Media:     tr.filePath,
+		Media:     tr.FilePath,
 		Subs:      "",
-		Mtype:     tr.mediaType,
+		Mtype:     tr.MediaType,
 		Transcode: false,
 		Seek:      false,
 		LogOutput: nil,
@@ -60,7 +60,7 @@ func (p *Player) PlayTrack(tr Track, scr httphandlers.Screen) error {
 	// We pass the tvData here as we need the callback handlers to be able to react
 	// to the different media renderer states.
 	go func() {
-		p.server.StartServer(serverStarted, tr.filePath, "", p.tvData, scr)
+		p.server.StartServer(serverStarted, tr.FilePath, "", p.tvData, scr)
 	}()
 	// Wait for HTTP server to properly initialize
 	if err := <-serverStarted; err != nil {
@@ -97,7 +97,7 @@ func (p *Player) available() error {
 	return nil
 }
 
-func (p *Player) tearDown() {
+func (p *Player) TearDown() {
 	_ = p.Stop()
 	p.tvData = nil
 	if p.server != nil {
@@ -105,14 +105,18 @@ func (p *Player) tearDown() {
 	}
 }
 
-type dummyScreen struct {
+type DummyScreen struct {
 	ctxCancel context.CancelFunc
 }
 
-func (d *dummyScreen) EmitMsg(msg string) {
+func NewDummyScreen(cancel context.CancelFunc) *DummyScreen {
+	return &DummyScreen{ctxCancel: cancel}
+}
+
+func (d *DummyScreen) EmitMsg(msg string) {
 	fmt.Println(msg)
 }
 
-func (d *dummyScreen) Fini() {
+func (d *DummyScreen) Fini() {
 	d.ctxCancel()
 }
