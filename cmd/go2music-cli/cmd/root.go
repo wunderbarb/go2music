@@ -1,4 +1,5 @@
-// v0.1.0
+// v0.1.1
+// (C) Nov 2024
 
 package cmd
 
@@ -16,16 +17,8 @@ var cVersion string
 var rootCmd = &cobra.Command{
 	Use:     "cmd",
 	Version: cVersion,
-	Short:   "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	Short:   "go2music is a specialized UPNP player",
+	Long:    `go2music is a specialized UPNP player.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

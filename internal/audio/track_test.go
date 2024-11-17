@@ -1,12 +1,12 @@
-// v0.1.0
+// v0.2.0
+// Author: DIEHL E.
 
 package audio
 
 import (
+	"github.com/wunderbarb/test"
 	"path/filepath"
 	"testing"
-
-	"github.com/wunderbarb/test"
 )
 
 func TestNewTrack(t *testing.T) {
@@ -29,5 +29,19 @@ func TestNewTrack(t *testing.T) {
 		if err == nil {
 			assert.NotNil(track)
 		}
+	}
+}
+
+func Test_extractDataFLAC(t *testing.T) {
+	require, assert := test.Describe(t)
+	album, title, err := extractDataFLAC(_goodTrack)
+	require.NoError(err)
+	assert.Equal("Blue Moon", album)
+	assert.Equal("Autumn Rain", title)
+}
+
+func isPanic(err error) {
+	if err != nil {
+		panic(err)
 	}
 }

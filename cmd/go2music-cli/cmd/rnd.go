@@ -1,5 +1,6 @@
-// v0.1.1
+// v0.1.3
 // Author: DIEHL E.
+// (C) Nov 2024
 
 package cmd
 
@@ -33,14 +34,18 @@ var rndCmd = &cobra.Command{
 			pterm.Error.Println(err)
 			os.Exit(7)
 		}
-
-		scr := audio.NewDummyScreen(nil)
+		defer pl.TearDown()
+		//scr := audio.NewDummyScreen(func() { pterm.Warning.Println("dummy") })
+		scr := userFeedBack{
+			c:  c,
+			pl: pl,
+		}
 		tr := c.Random()
-		if err := pl.PlayTrack(tr, scr); err != nil {
+		if err := pl.PlayTrack(tr, &scr); err != nil {
 			pterm.Error.Println(err)
 			os.Exit(8)
 		}
-		pterm.Info.Println(tr.FilePath)
+		pterm.Info.Printfln("%s of %s\n", tr.Title, tr.Album)
 		_ = keyboard.Listen(func(key keys.Key) (stop bool, err error) {
 			switch key.Code {
 			case keys.CtrlC:
@@ -61,18 +66,34 @@ var rndCmd = &cobra.Command{
 				case "n":
 					tr := c.Random()
 					_ = pl.Next(tr)
-					pterm.Info.Println(tr.FilePath)
+					pterm.Info.Printfln("%s of %s\n", tr.Title, tr.Album)
 					return false, nil
 				}
 			}
 
 			return false, nil // Return false to continue listening
 		})
-		pl.TearDown()
+
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(rndCmd)
+
+}
+
+type userFeedBack struct {
+	c  audio.Collection
+	pl *audio.Player
+}
+
+func (ufb *userFeedBack) EmitMsg(s string) {
+	pterm.Info.Println(s)
+}
+
+func (ufb *userFeedBack) Fini() {
+	tr := ufb.c.Random()
+	_ = ufb.pl.Next(tr)
+	pterm.Info.Printfln("%s of %s\r", tr.Title, tr.Album)
 
 }

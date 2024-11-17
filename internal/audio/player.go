@@ -12,6 +12,7 @@ import (
 	"github.com/alexballas/go2tv/httphandlers"
 	"github.com/alexballas/go2tv/soapcalls"
 	"github.com/alexballas/go2tv/soapcalls/utils"
+	"github.com/pterm/pterm"
 	"net/url"
 )
 
@@ -43,13 +44,13 @@ func (p *Player) Devices() ([]string, error) {
 	return s, nil
 }
 
-// PlayTrack plays the track `tr` on the selected device.  `src` handles the feedback and stopping the service.
-func (p *Player) PlayTrack(tr Track, scr httphandlers.Screen) error {
+// PlayTrack plays the track `tra` on the selected device.  `src` handles the feedback and stopping the service.
+func (p *Player) PlayTrack(tra Track, scr httphandlers.Screen) error {
 	tvData, err := soapcalls.NewTVPayload(&soapcalls.Options{
 		DMR:       p.devices[p.selectedDevice],
-		Media:     tr.FilePath,
+		Media:     tra.FilePath,
 		Subs:      "",
-		Mtype:     tr.MediaType,
+		Mtype:     tra.MediaType,
 		Transcode: false,
 		Seek:      false,
 		LogOutput: nil,
@@ -63,7 +64,7 @@ func (p *Player) PlayTrack(tr Track, scr httphandlers.Screen) error {
 	// We pass the tvData here as we need the callback handlers to be able to react
 	// to the different media renderer states.
 	go func() {
-		p.server.StartServer(serverStarted, tr.FilePath, "", p.tvData, scr)
+		p.server.StartServer(serverStarted, tra.FilePath, "", p.tvData, scr)
 	}()
 	// Wait for HTTP server to properly initialize
 	if err := <-serverStarted; err != nil {
@@ -86,8 +87,8 @@ func (p *Player) Play() error {
 	return p.tvData.SendtoTV("Play1")
 }
 
-// Next plays the next track `tr`
-func (p *Player) Next(tr Track) error {
+// Next plays the next track `tra`
+func (p *Player) Next(tra Track) error {
 	if p.tvData == nil {
 		return ErrNoDevicePlaying
 	}
@@ -96,14 +97,14 @@ func (p *Player) Next(tr Track) error {
 		return err
 	}
 	listenAddress := p.tvData.ListenAddress()
-	p.tvData.MediaURL = fmt.Sprintf("http://%s/%s", listenAddress, utils.ConvertFilename(tr.FilePath))
-	p.tvData.MediaPath = tr.FilePath
-	p.tvData.MediaType = tr.MediaType
+	p.tvData.MediaURL = fmt.Sprintf("http://%s/%s", listenAddress, utils.ConvertFilename(tra.FilePath))
+	p.tvData.MediaPath = tra.FilePath
+	p.tvData.MediaType = tra.MediaType
 	newHandler, err := url.Parse(p.tvData.MediaURL)
 	if err != nil { // SHOULD NEVER HAPPEN
 		return err
 	}
-	p.server.AddHandler(newHandler.Path, p.tvData, tr.FilePath)
+	p.server.AddHandler(newHandler.Path, p.tvData, tra.FilePath)
 	p.server.RemoveHandler(oldHandler.Path)
 	return p.tvData.SendtoTV("Play1")
 }
@@ -153,7 +154,7 @@ func NewDummyScreen(cancel context.CancelFunc) *DummyScreen {
 }
 
 func (d *DummyScreen) EmitMsg(msg string) {
-	fmt.Println(msg)
+	pterm.Info.Println(msg)
 }
 
 func (d *DummyScreen) Fini() {
