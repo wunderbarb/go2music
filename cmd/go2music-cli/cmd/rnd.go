@@ -1,4 +1,4 @@
-// v0.1.3
+// v0.1.4
 // Author: DIEHL E.
 // (C) Nov 2024
 
@@ -36,16 +36,14 @@ var rndCmd = &cobra.Command{
 		}
 		defer pl.TearDown()
 		//scr := audio.NewDummyScreen(func() { pterm.Warning.Println("dummy") })
-		scr := userFeedBack{
-			c:  c,
-			pl: pl,
-		}
+		scr := newUserFeedBack(c, pl)
 		tr := c.Random()
+		scr.title = tr.Title + " of " + tr.Album
 		if err := pl.PlayTrack(tr, &scr); err != nil {
 			pterm.Error.Println(err)
 			os.Exit(8)
 		}
-		pterm.Info.Printfln("%s of %s\n", tr.Title, tr.Album)
+
 		_ = keyboard.Listen(func(key keys.Key) (stop bool, err error) {
 			switch key.Code {
 			case keys.CtrlC:
@@ -64,9 +62,7 @@ var rndCmd = &cobra.Command{
 					_ = pl.Play()
 					return false, nil
 				case "n":
-					tr := c.Random()
-					_ = pl.Next(tr)
-					pterm.Info.Printfln("%s of %s\n", tr.Title, tr.Album)
+					scr.Fini()
 					return false, nil
 				}
 			}
@@ -83,17 +79,36 @@ func init() {
 }
 
 type userFeedBack struct {
-	c  audio.Collection
-	pl *audio.Player
+	c     *audio.Collection
+	pl    *audio.Player
+	sp    *pterm.SpinnerPrinter
+	title string
+}
+
+func newUserFeedBack(c audio.Collection, pl *audio.Player) userFeedBack {
+	s, _ := pterm.DefaultSpinner.Start()
+	s.ShowTimer = false
+	return userFeedBack{c: &c, pl: pl, sp: s}
 }
 
 func (ufb *userFeedBack) EmitMsg(s string) {
-	pterm.Info.Println(s)
+	const (
+		playSymbol  = "▶️"
+		pauseSymbol = "⏸️"
+		eraseEOL    = "\033[K"
+	)
+	switch s {
+	case "Playing":
+		ufb.sp.UpdateText(playSymbol + "  " + ufb.title + eraseEOL)
+	case "Paused":
+
+		ufb.sp.UpdateText(pauseSymbol + "  " + ufb.title + eraseEOL)
+
+	}
 }
 
 func (ufb *userFeedBack) Fini() {
 	tr := ufb.c.Random()
 	_ = ufb.pl.Next(tr)
-	pterm.Info.Printfln("%s of %s\r", tr.Title, tr.Album)
-
+	ufb.title = tr.Title + " of " + tr.Album
 }
