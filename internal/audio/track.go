@@ -1,9 +1,11 @@
-// v0.1.1
+// v0.2.0
 // Author: DIEHL E.
+// (C), Nov 2024
 
 package audio
 
 import (
+	"github.com/wunderbarb/toolbox"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,10 +16,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ErrNotAudioFile is returned when the file is not an audio file.
-var ErrNotAudioFile = errors.New("not an audio file")
+var (
+	// ErrNotAudioFile is returned when the file is not an audio file.
+	ErrNotAudioFile = errors.New("not an audio file")
 
-var ErrNoInformation = errors.New("no information")
+	ErrNoCover       = errors.New("no cover")
+	ErrNoInformation = errors.New("no information")
+)
 
 // Track holds the metadata for a music track.
 type Track struct {
@@ -61,6 +66,11 @@ func NewTrack(filePath string) (*Track, error) {
 	return tr, nil
 }
 
+// Cover returns the album cover if it finds it in the track's directory ot its parent directory.
+func (tr Track) Cover() (string, error) {
+	return findCover(tr.FilePath)
+}
+
 func extractDataFLAC(path string) (string, string, error) {
 	const (
 		// https://www.xiph.org/vorbis/doc/v-comment.html
@@ -95,4 +105,35 @@ func extractDataFLAC(path string) (string, string, error) {
 		return album, title, err
 	}
 	return "", "", ErrNoInformation
+}
+
+func findCover(path string) (string, error) {
+	dir1 := filepath.Dir(path)
+	l, err := toolbox.List(dir1, toolbox.WithExtension("bmp"), toolbox.WithExtension("jpg"),
+		toolbox.WithExtension("png"), toolbox.WithExtension("gif"))
+	if err != nil {
+		return "", err
+	}
+	for _, v := range l {
+		if isImageFile(v) {
+			return v, nil
+		}
+	}
+	dir2 := filepath.Join(dir1, "..")
+	l, err = toolbox.List(dir2, toolbox.WithExtension("bmp"), toolbox.WithExtension("jpg"),
+		toolbox.WithExtension("png"), toolbox.WithExtension("gif"))
+	if err != nil {
+		return "", err
+	}
+	for _, v := range l {
+		if isImageFile(v) {
+			return v, nil
+		}
+	}
+	return "", ErrNoCover
+}
+
+func isImageFile(path string) bool {
+	ext := strings.ToLower(filepath.Ext(path))
+	return ext == ".jpg" || ext == ".png" || ext == ".bmp" || ext == ".gif"
 }
