@@ -60,7 +60,6 @@ func main() {
 			pterm.Error.Println(err)
 			os.Exit(7)
 		}
-		fmt.Println("Radio clicked " + s)
 	})
 
 	// Create buttons with icons
@@ -69,8 +68,7 @@ func main() {
 		fmt.Println("Play clicked")
 		if !started {
 			tr := c.Random()
-			_ = usf.title.Set(tr.Title + " of " + tr.Album)
-			fmt.Println(usf.title)
+			usf.update(&tr)
 			if err := p.PlayTrack(tr, &usf); err != nil {
 				fmt.Println(err)
 				os.Exit(8)
@@ -89,10 +87,8 @@ func main() {
 			pterm.Error.Println(err)
 			os.Exit(7)
 		}
-		fmt.Println("Pause clicked")
 	})
 	nextButton := widget.NewButtonWithIcon("Next", theme.MediaSkipNextIcon(), func() {
-		fmt.Println("Next clicked")
 		usf.Fini()
 	})
 

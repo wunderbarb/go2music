@@ -1,5 +1,5 @@
-// v0.2.0
-// Author: DIEHL E.
+// v0.2.1
+// Author: wunderbarb
 // (C), Nov 2024
 
 package audio
@@ -116,7 +116,7 @@ func findCover(path string) (string, error) {
 	}
 	for _, v := range l {
 		if isImageFile(v) {
-			return v, nil
+			return filepath.Join(dir1, v), nil
 		}
 	}
 	dir2 := filepath.Join(dir1, "..")
@@ -127,7 +127,7 @@ func findCover(path string) (string, error) {
 	}
 	for _, v := range l {
 		if isImageFile(v) {
-			return v, nil
+			return filepath.Join(dir2, v), nil
 		}
 	}
 	return "", ErrNoCover
