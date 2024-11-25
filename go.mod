@@ -2,8 +2,6 @@ module github.com/wunderbarb/go2music
 
 go 1.22.1
 
-replace github.com/wunderbarb/toolbox => ../toolbox
-
 require (
 	atomicgo.dev/keyboard v0.2.9
 	fyne.io/fyne/v2 v2.5.1

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/theme"
@@ -49,7 +50,10 @@ func main() {
 	title := binding.NewString()
 	label := widget.NewLabel("Hello World")
 	label.Bind(title)
-	usf := newUserFeedBack(c, &p, title)
+	img := canvas.NewImageFromFile("go2music logo.png")
+	img.Resize(fyne.NewSize(400, 400))
+	img.FillMode = canvas.ImageFillContain
+	usf := newUserFeedBack(c, &p, title, img)
 	// Create a new set of radio buttons
 	radio := widget.NewRadioGroup(ll, func(s string) {
 		if err := p.SelectDevice(s); err != nil {
@@ -96,7 +100,7 @@ func main() {
 	buttonBar := container.NewHBox(playButton, pauseButton, nextButton)
 
 	// Set the content of the window to the radio buttons and buttons bar
-	myWindow.SetContent(container.NewBorder(nil, buttonBar, radio, label))
+	myWindow.SetContent(container.NewBorder(label, buttonBar, radio, nil, img))
 
 	// Show and run the application
 	myWindow.ShowAndRun()
@@ -106,18 +110,14 @@ type userFeedBack struct {
 	c     *audio.Collection
 	pl    *audio.Player
 	title binding.String
+	img   *canvas.Image
 }
 
-func newUserFeedBack(c audio.Collection, pl *audio.Player, t binding.String) userFeedBack {
-	return userFeedBack{c: &c, pl: pl, title: t}
+func newUserFeedBack(c audio.Collection, pl *audio.Player, t binding.String, img *canvas.Image) userFeedBack {
+	return userFeedBack{c: &c, pl: pl, title: t, img: img}
 }
 
 func (ufb *userFeedBack) EmitMsg(s string) {
-	//const (
-	//	playSymbol  = "▶️"
-	//	pauseSymbol = "⏸️"
-	//	eraseEOL    = "\033[K"
-	//)
 	switch s {
 	case "Playing":
 		fmt.Println("Playing")
@@ -131,5 +131,15 @@ func (ufb *userFeedBack) EmitMsg(s string) {
 func (ufb *userFeedBack) Fini() {
 	tr := ufb.c.Random()
 	_ = ufb.pl.Next(tr)
+	ufb.update(&tr)
+}
+
+func (ufb userFeedBack) update(tr *audio.Track) {
 	_ = ufb.title.Set(tr.Title + " of " + tr.Album)
+	cover, err := tr.Cover()
+	if err != nil {
+		cover = "go2music logo.png"
+	}
+	ufb.img.File = cover
+	ufb.img.Refresh()
 }
